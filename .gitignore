@@ -1,0 +1,6 @@
+target/
+Cargo.lock
+backup.rs
+back.rs
+.env
+..
