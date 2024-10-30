@@ -27,17 +27,19 @@
 - Git
 
 ### Шаги установки
-1. Клонирование репозитория:
+1. Создайте .env в папке проекта. Добавьте необходимые конфигурации в .env из примера .env_example.txt файла.
+
+2. Клонирование репозитория:
 ```bash
 git clone [repository-url]
 ```
 
-2. Настройка прав и запуск скрипта:
+3. Настройка прав и запуск скрипта:
 ```bash
 cd binance_cex && chmod +x key.sh && ./key.sh
 ```
 
-3. Сборка и запуск Docker-контейнера:
+4. Сборка и запуск Docker-контейнера:
 ```bash
 sudo docker build -t binance . && sudo docker run -it -d --name binance_cont --restart unless-stopped binance
 ```
