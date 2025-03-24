@@ -28,12 +28,12 @@ impl Default for Config {
         Config {
             api_key: env::var("API_KEY").expect("API_KEY не установлен в .env"),
             api_secret: env::var("API_SECRET").expect("API_SECRET не установлен в .env"),
-            wallet_balance: 80.0, // Рабочий баланс портфеля в USDT 
+            wallet_balance: 90.0, // Рабочий баланс портфеля в USDT 
             top_tokens_count: 707, // Количество токенов которые будут учитаны для создания цепочек 
             quote_currencies: vec!["USDT", "USDC", "BNB", "BTC", "DAI", "ETH"], // Обязательные токены для парсинга. НЕ МЕНЯТЬ!  
-            mandatory_tokens: vec!["ADAUSDT", "ADABTC", "ADABNB", "BTCUSDT", "BTCUSDC", "USDCUSDT", "BNBDAI"], // Обязательные токен пары для парсинга
+            mandatory_tokens: vec!["ADAUSDT", "ADABTC", "ADABNB", "BTCUSDT", "BTCUSDC", "USDCUSDT", "BNBDAI"], // Обязательные токен пары для парсинга. НЕ МЕНЯТЬ! 
             start_end_token: "USDT", // Начальный и конечный токен в цепочке для логики. НЕ МЕНЯТЬ!
-            initial_amount: 1000.0, // Расчетный баланс просцета цепочек. НЕ РАБОЧИЙ БАЛАНС ПОРТФЕЛЯ
+            initial_amount: 250.0, // Расчетный баланс просцета цепочек. НЕ РАБОЧИЙ БАЛАНС ПОРТФЕЛЯ. ЗНАЧЕНИЕ ДОЛЖНО БЫТЬ НА 50% БОЛЬШЕ ЧЕМ wallet_balance
             profit_threshold: 0.025,   // 0.02 - 2% profit , 0.0001 - 0.01% profit 
             basic_threshold: 0.015, // 0.01 - 1% зазор, 0.0001 - 0.01% зазор
         }

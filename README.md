@@ -59,6 +59,37 @@ cd binance_cex && chmod +x key.sh && ./key.sh
 sudo docker build -t binance . && sudo docker run -it -d --name binance_cont --restart unless-stopped binance
 ```
 
+## Команды управления контейнером
+
+### 1. Войти в конейтнер в sh оболочку:
+```bash
+sudo docker exec -it binance_cont sh
+```
+
+пару доступных команд внутри контейнера:
+```bash
+ps aux  # Просмотр запущенных процессов
+tail -f /var/log/app.log  # Просмотр логов приложения
+df -h  # Проверка свободного места
+```
+
+### 2. Посмотреть логи контейнера:
+```bash
+sudo docker logs binance_cont
+```
+
+Для просмотра логов в режиме реального времени:
+```bash
+sudo docker logs -f binance_cont
+```
+
+### 3. Войти в контейнер для просмотра в реальном времени:
+```bash
+sudo docker attach binance_cont
+```
+
+Для выхода из контейнера без его остановки используйте комбинацию клавиш: `Ctrl+P, Ctrl+Q`
+
 ## Тестирование
 
 Для проведения тестирования необходимо выполнить следующие шаги:

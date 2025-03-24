@@ -1,5 +1,5 @@
 # Этап сборки
-FROM rust:1.70-bullseye AS builder
+FROM rust:1.85-bullseye AS builder
 
 # Устанавливаем необходимые системные пакеты
 RUN apt-get update && apt-get install -y \
