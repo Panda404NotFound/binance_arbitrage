@@ -233,9 +233,13 @@ async fn main() -> Result<()> {
 
     // Запуск TelegramBot
     let telegram_bot_clone = Arc::clone(&telegram_bot);
-    tokio::spawn(async move {
+    let telegram_task = tokio::spawn(async move {
         telegram_bot_clone.run().await;
     });
+
+    // Добавим telegram_bot в вектор задач, которые нужно корректно завершить
+    let shutdown_components = Arc::new(RwLock::new(vec![telegram_bot]));
+    let shutdown_components_clone = Arc::clone(&shutdown_components);
 
     // Создаем каналы для передачи данных между Bot, BotMonitor и Logger
     let (chain_sender, chain_receiver) = mpsc::channel(100);
@@ -281,7 +285,7 @@ async fn main() -> Result<()> {
 
     // Функция проверки времени выполнения
     let mut shutdown_handle = tokio::spawn(async move {
-        handle_shutdown_signal(shutdown_sender_clone, error_status.clone()).await;
+        handle_shutdown_signal(shutdown_sender_clone, error_status.clone(), shutdown_components_clone).await;
     });
 
     let shutdown_sender_clone = shutdown_sender.clone();
@@ -370,14 +374,25 @@ async fn main() -> Result<()> {
         }
     }
 
-    async fn handle_shutdown_signal(shutdown_sender: mpsc::Sender<()>, error_status: Arc<RwLock<ErrorStatus>>) {
-
+    async fn handle_shutdown_signal(
+        shutdown_sender: mpsc::Sender<()>, 
+        error_status: Arc<RwLock<ErrorStatus>>,
+        shutdown_components: Arc<RwLock<Vec<Arc<TelegramBot>>>>,
+    ) {
         signal::ctrl_c().await.expect("Запуск остановки Ctrl+C");
         {
             let mut status = error_status.write().await;
             status.function_startup_state = Some("Запущен сигнала завершения. Критическая остановка".to_string());
         }
         println!("Received Ctrl+C, preparing to shut down...");
+        
+        // Корректно завершаем компоненты
+        let components = shutdown_components.read().await;
+        for component in components.iter() {
+            component.shutdown().await;
+        }
+        println!("Components shutdown signals sent");
+        
         if let Err(e) = shutdown_sender.send(()).await {
             eprintln!("Запущен сигнал остановки: {:?}", e);
         }

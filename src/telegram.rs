@@ -20,6 +20,7 @@ pub struct TelegramBot {
     error_status: Arc<RwLock<ErrorStatus>>,
     last_sent_errors: Arc<RwLock<HashMap<String, String>>>,
     bot_action_sender: broadcast::Sender<BotAction>,
+    shutdown_signal: Arc<RwLock<bool>>,
 }
 
 impl TelegramBot {
@@ -37,25 +38,51 @@ impl TelegramBot {
             error_status,
             last_sent_errors: Arc::new(RwLock::new(HashMap::new())),
             bot_action_sender,
+            shutdown_signal: Arc::new(RwLock::new(false)),
         }
     }
 
+    pub async fn shutdown(&self) {
+        let mut signal = self.shutdown_signal.write().await;
+        *signal = true;
+    }
+
     pub async fn run(self: Arc<Self>) {
+        let (shutdown_tx, mut shutdown_rx) = tokio::sync::oneshot::channel();
+        
+        let shutdown_signal_clone = Arc::clone(&self.shutdown_signal);
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(Duration::from_secs(1));
+            loop {
+                interval.tick().await;
+                if *shutdown_signal_clone.read().await {
+                    let _ = shutdown_tx.send(());
+                    break;
+                }
+            }
+        });
 
         let mut bot_action_receiver = self.bot_action_sender.subscribe();
         let telegram_bot_clone = Arc::clone(&self);
         let mut current_chat_id = self.chat_id;
 
-        // Запуск задачи для отправки периодических тестовых сообщений
         tokio::spawn(async move {
             telegram_bot_clone.test_message(current_chat_id).await;
         });
 
         loop {
-            sleep(Duration::from_millis(1000)).await;
+            tokio::select! {
+                _ = &mut shutdown_rx => {
+                    info!("Получен сигнал завершения для TelegramBot");
+                    break;
+                }
+                _ = sleep(Duration::from_millis(1000)) => {
+                    // Продолжаем обычное выполнение
+                }
+            }
+            
             self.clear_resolved_errors().await;
 
-            // Получение действий от bot_action_receiver
             while let Ok(action) = bot_action_receiver.try_recv() {
                 match action {
                     BotAction::CycleCompleted {
@@ -95,95 +122,100 @@ impl TelegramBot {
                 }
             }
 
-            // Обработка ошибок из error_status
             let error_status = self.error_status.read().await.clone();
+            drop(error_status);
+            
+            let mut errors_to_send = Vec::new();
+            {
+                let last_sent_errors = self.last_sent_errors.read().await;
+                
+                if let Some(error) = &self.error_status.read().await.handle_shutdown_signal_error {
+                    if last_sent_errors.get("handle_shutdown_signal_error") != Some(error) {
+                        errors_to_send.push(("handle_shutdown_signal_error".to_string(), 
+                                            "Ошибка обработки сигнала завершения".to_string(), 
+                                            error.clone()));
+                    }
+                }
 
-            let mut last_sent_errors = self.last_sent_errors.write().await;
+                if let Some(error) = &self.error_status.read().await.internet_connection_failures {
+                    if last_sent_errors.get("internet_connection_failures") != Some(error) {
+                        errors_to_send.push(("internet_connection_failures".to_string(), 
+                                            "Ошибка подключения к интернету".to_string(), 
+                                            error.clone()));
+                    }
+                }
 
-            if let Some(error) = &error_status.handle_shutdown_signal_error {
-                if last_sent_errors.get("handle_shutdown_signal_error") != Some(error) {
-                    if let Err(e) = self
-                        .send_error_message_with_retry(
-                            &mut current_chat_id,
-                            "Ошибка обработки сигнала завершения",
-                            error,
-                        )
-                        .await
-                    {
-                        eprintln!(
-                            "Не удалось отправить сообщение об ошибке обработки сигнала завершения: {:?}",
-                            e
-                        );
-                    } else {
-                        last_sent_errors.insert("handle_shutdown_signal_error".to_string(), error.clone());
+                if let Some(error) = &self.error_status.read().await.restart_process_error {
+                    if last_sent_errors.get("restart_process_error") != Some(error) {
+                        errors_to_send.push(("restart_process_error".to_string(), 
+                                            "Ошибка рестарта процесса".to_string(), 
+                                            error.clone()));
+                    }
+                }
+
+                if let Some(state) = &self.error_status.read().await.function_startup_state {
+                    if last_sent_errors.get("function_startup_state") != Some(state) {
+                        errors_to_send.push(("function_startup_state".to_string(), 
+                                            "Состояние запуска функции".to_string(), 
+                                            state.clone()));
                     }
                 }
             }
-
-            if let Some(error) = &error_status.internet_connection_failures {
-                if last_sent_errors.get("internet_connection_failures") != Some(error) {
-                    if let Err(e) = self
-                        .send_error_message_with_retry(
-                            &mut current_chat_id,
-                            "Ошибка подключения к интернету",
-                            error,
-                        )
-                        .await
-                    {
-                        eprintln!("Не удалось отправить сообщение об ошибках подключения к интернету: {:?}", e);
-                    } else {
-                        last_sent_errors.insert("internet_connection_failures".to_string(), error.clone());
-                    }
-                }
-            }
-
-            // Обработка новых ошибок рестарта процесса
-            if let Some(error) = &error_status.restart_process_error {
-                if last_sent_errors.get("restart_process_error") != Some(error) {
-                    if let Err(e) = self
-                        .send_error_message_with_retry(
-                            &mut current_chat_id,
-                            "Ошибка рестарта процесса",
-                            error,
-                        )
-                        .await
-                    {
-                        eprintln!("Не удалось отправить сообщение об ошибке рестарта процесса: {:?}", e);
-                    } else {
-                        last_sent_errors.insert("restart_process_error".to_string(), error.clone());
-                    }
-                }
-            }
-
-            // Обработка новых состояний запуска функций
-            if let Some(state) = &error_status.function_startup_state {
-                if last_sent_errors.get("function_startup_state") != Some(state) {
+            
+            for (key, error_type, error_message) in errors_to_send {
+                if key == "function_startup_state" {
                     if let Err(e) = self
                         .send_info_message_with_retry(
                             &mut current_chat_id,
-                            "Состояние запуска функции",
-                            state,
+                            &error_type,
+                            &error_message,
                         )
                         .await
                     {
-                        eprintln!("Не удалось отправить сообщение о состоянии запуска функции: {:?}", e);
+                        eprintln!("Не удалось отправить сообщение: {:?}", e);
                     } else {
-                        last_sent_errors.insert("function_startup_state".to_string(), state.clone());
+                        let mut last_sent = self.last_sent_errors.write().await;
+                        last_sent.insert(key, error_message);
+                    }
+                } else {
+                    if let Err(e) = self
+                        .send_error_message_with_retry(
+                            &mut current_chat_id,
+                            &error_type,
+                            &error_message,
+                        )
+                        .await
+                    {
+                        eprintln!("Не удалось отправить сообщение: {:?}", e);
+                    } else {
+                        let mut last_sent = self.last_sent_errors.write().await;
+                        last_sent.insert(key, error_message);
                     }
                 }
             }
         }
+        
+        info!("TelegramBot корректно завершил работу");
     }
 
     async fn clear_resolved_errors(&self) {
-        let mut last_sent_errors = self.last_sent_errors.write().await;
         let error_status = self.error_status.read().await;
-
-        if error_status.handle_shutdown_signal_error.is_none() {
+        let error_state = error_status.clone();
+        drop(error_status);
+        
+        let mut last_sent_errors = self.last_sent_errors.write().await;
+        
+        if error_state.handle_shutdown_signal_error.is_none() {
             last_sent_errors.remove("handle_shutdown_signal_error");
         }
-        if error_status.internet_connection_failures.is_none() {
+        if error_state.internet_connection_failures.is_none() {
             last_sent_errors.remove("internet_connection_failures");
+        }
+        if error_state.restart_process_error.is_none() {
+            last_sent_errors.remove("restart_process_error");
+        }
+        if error_state.function_startup_state.is_none() {
+            last_sent_errors.remove("function_startup_state");
         }
     }
 
@@ -230,33 +262,46 @@ impl TelegramBot {
     ) -> Result<i64, teloxide::RequestError> {
         let max_retries = 3;
         for attempt in 1..=max_retries {
-            match self
+            let request_future = self
                 .bot
                 .send_message(chat_id, message)
                 .parse_mode(ParseMode::Html)
-                .await
-            {
-                Ok(message) => {
-                    info!("Сообщение успешно отправлено. Ответ сервера: {:?}", message);
-                    return Ok(message.chat.id.0);
-                }
-                Err(teloxide::RequestError::MigrateToChatId(new_id)) => {
-                    println!("Чат был перенесен. Новый chat ID: {}", new_id);
-                    return Ok(new_id);
-                }
-                Err(e) => {
-                    if attempt < max_retries {
-                        eprintln!(
-                            "Не удалось отправить сообщение (попытка {}): {:?}. Повторная попытка...",
-                            attempt, e
-                        );
-                        sleep(Duration::from_secs(1)).await;
-                    } else {
-                        eprintln!(
-                            "Не удалось отправить сообщение после {} попыток: {:?}",
-                            max_retries, e
-                        );
-                        return Err(e);
+                .send();
+            
+            match tokio::time::timeout(Duration::from_secs(5), request_future).await {
+                Err(_) => {
+                    info!("Тайм-аут при отправке сообщения (попытка {}), повторная попытка...", attempt);
+                    if attempt == max_retries {
+                        return Err(teloxide::RequestError::Api(teloxide::ApiError::Unknown(
+                            "Тайм-аут API запроса".into(),
+                        )));
+                    }
+                    sleep(Duration::from_secs(1)).await;
+                    continue;
+                },
+                Ok(api_result) => match api_result {
+                    Ok(message) => {
+                        info!("Сообщение успешно отправлено. Ответ сервера: {:?}", message);
+                        return Ok(message.chat.id.0);
+                    }
+                    Err(teloxide::RequestError::MigrateToChatId(new_id)) => {
+                        println!("Чат был перенесен. Новый chat ID: {}", new_id);
+                        return Ok(new_id);
+                    }
+                    Err(e) => {
+                        if attempt < max_retries {
+                            eprintln!(
+                                "Не удалось отправить сообщение (попытка {}): {:?}. Повторная попытка...",
+                                attempt, e
+                            );
+                            sleep(Duration::from_millis(500 * 2_u64.pow(attempt as u32))).await;
+                        } else {
+                            eprintln!(
+                                "Не удалось отправить сообщение после {} попыток: {:?}",
+                                max_retries, e
+                            );
+                            return Err(e);
+                        }
                     }
                 }
             }
@@ -267,7 +312,7 @@ impl TelegramBot {
     }
 
     async fn test_message(&self, mut chat_id: ChatId) {
-        let mut interval = interval(Duration::from_secs(3600)); // 1 hour
+        let mut interval = interval(Duration::from_secs(3600));
 
         loop {
             interval.tick().await;
@@ -323,7 +368,6 @@ impl TelegramBot {
         Ok(())
     }
 
-    // Добавьте новый метод для отправки информационных сообщений
     async fn send_info_message_with_retry(
         &self,
         current_chat_id: &mut ChatId,
