@@ -1,174 +1,192 @@
-# BINANCE Мультивалютный арбитражный Бот
+# BINANCE MULTI-CURRENCY ARBITRAGE BOT
 
-## Описание
-Представляю вашему внимание мультивалютный арбитражный бот, который работает выполняет арбитражные операции с мультивалютными парами. Цепочки распределены от 4 до 5 например USDT -> BTC -> SOL -> (XPR опционально если цепочка состоит из 5 ребер) -> USDT где начальный и конечный токен всегда USDT чтобы предотвратить падение портфеля в процессе работы. 
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=FF0000&height=200&section=header&text=SYSTEM%20OVERRIDE&fontSize=60&fontColor=FFFFFF&animation=fadeIn&fontAlignY=38&desc=SECURE%20ARBITRAGE%20PROTOCOL&descAlignY=55&descAlign=50&strokeWidth=1" width="100%"/>
+</div>
 
-Делюсь проектом потому что я не удовлетворен его доходностью, которая за время релизного теста не показала ожидаемых результатов. Бот расчитан на максимизацию прибыли и минимизацию рисков, ориентирован на доходность от 2,5% за вилку.
+## [ SYSTEM OVERVIEW ]
 
-Я хочу заняться другим проектом для автоматизированной торговлю на спотовом и фьючерсном рынке с использованием машинного обучения и нейросетей.
+### 🔥 PROJECT DESCRIPTION
 
-### Принцип работы
-- Работает с цепочками из 4-5 торговых пар
-- Схема работы: USDT -> BTC -> SOL -> (XPR*) -> USDT 
-- *XPR опционален для 5-звенных цепочек
-- Начальный и конечный токен всегда USDT для защиты портфеля
+Introducing a sophisticated multi-currency arbitrage bot engineered for executing complex arbitrage operations across multiple currency pairs. The system implements trading chains consisting of 4-5 pairs, following the pattern: **USDT → BTC → SOL → (XPR optional) → USDT**, where both the initial and final token remain USDT to safeguard portfolio stability during operation.
 
-## Техническая реализация
-- Основная логика находится в `brain_bot.rs`
-- Базовые конфигурации в `config.rs`
-- Построение цепочек через рекурсивный DFS
-- Асинхронная параллельная обработка всех цепочек
-- Неблокирующий доступ к данным
-- Защита от переполнения стека
+I'm sharing this project because its profitability fell short of expectations during release testing. The bot is designed to maximize profit while minimizing risks, targeting a profit threshold of 2.5% per arbitrage opportunity.
 
-## Установка
+I'm now pivoting to develop a more advanced project focused on automated trading in spot and futures markets using machine learning and neural networks.
 
-### Предварительные требования
-- Linux-дистрибутив
+### ⚡ OPERATIONAL PRINCIPLES
+
+- Processes trading chains of 4-5 pairs
+- Core workflow: **USDT → BTC → SOL → (XPR*) → USDT**
+- *XPR inclusion optional for 5-link chains
+- USDT anchors both ends of each chain for portfolio protection
+
+## 🔥 TECHNICAL ARCHITECTURE
+
+- Core logic housed in `brain_bot.rs`
+- Foundational configurations in `config.rs`
+- Chain construction via recursive DFS algorithm
+- Asynchronous parallel processing of all chains
+- Non-blocking data access implementation
+- Stack overflow protection mechanisms
+
+## 🔥 DEPLOYMENT INSTRUCTIONS
+
+### ⚡ PREREQUISITES
+
+- Linux distribution
 - Docker
 - Git
 
-### Шаги установки
-1. Создайте .env в папке проекта. Добавьте необходимые конфигурации в .env из примера .env_example.txt файла.
+### ⚡ INSTALLATION STEPS
 
-2. Клонирование репозитория:
+1. Create `.env` file in the project directory. Add necessary configurations from the `.env_example.txt` file.
+
+2. Clone the repository:
 ```bash
 git clone [repository-url]
 ```
 
-3. Настройка прав и запуск скрипта:
+3. Configure permissions and execute script:
 ```bash
 cd binance_cex && chmod +x key.sh && ./key.sh
 ```
 
-4. Сборка и запуск Docker-контейнера:
+4. Build and launch Docker container:
 ```bash
 sudo docker build -t binance . && sudo docker run -it -d --name binance_cont --restart unless-stopped binance
 ```
 
-## Команды управления контейнером
+## 🔥 CONTAINER MANAGEMENT
 
-### 1. Войти в конейтнер в sh оболочку:
+### ⚡ ACCESS CONTAINER SHELL:
 ```bash
 sudo docker exec -it binance_cont sh
 ```
 
-пару доступных команд внутри контейнера:
+Available commands inside container:
 ```bash
-ps aux  # Просмотр запущенных процессов
-tail -f /var/log/app.log  # Просмотр логов приложения
-df -h  # Проверка свободного места
+ps aux  # View running processes
+tail -f /var/log/app.log  # View application logs
+df -h  # Check available disk space
 ```
 
-### 2. Посмотреть логи контейнера:
+### ⚡ VIEW CONTAINER LOGS:
 ```bash
 sudo docker logs binance_cont
 ```
 
-Для просмотра логов в режиме реального времени:
+For real-time log monitoring:
 ```bash
 sudo docker logs -f binance_cont
 ```
 
-### 3. Войти в контейнер для просмотра в реальном времени:
+### ⚡ ATTACH TO CONTAINER:
 ```bash
 sudo docker attach binance_cont
 ```
 
-Для выхода из контейнера без его остановки используйте комбинацию клавиш: `Ctrl+P, Ctrl+Q`
+Exit container without stopping using: `Ctrl+P, Ctrl+Q`
 
-## Тестирование
+## 🔥 TESTING PROCEDURES
 
-Для проведения тестирования необходимо выполнить следующие шаги:
+Follow these steps to conduct testing:
 
-### 1. Установка Cargo
+### ⚡ INSTALL CARGO
 
-Установите менеджер пакетов Cargo, выполнив следующую команду:
+Install the Cargo package manager with:
 
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-> **Примечание**: Cargo устанавливается с официального сайта Rust. Следуйте инструкциям установщика в терминале.
+> **Note**: Cargo installs from the official Rust website. Follow terminal instructions.
 
-### 2. Навигация в директорию проекта
+### ⚡ NAVIGATE TO PROJECT DIRECTORY
 
-Перейдите в корневую директорию проекта.
+Move to the project's root directory.
 
-### 3. Запуск тестирования
+### ⚡ EXECUTE TEST RUN
 
-Выполните следующую команду для запуска с включенным выводом отладочной информации:
+Run with debug output enabled:
 
 ```bash
 RUST_LOG=debug cargo run --release
 ```
 
-## Системные требования
-- CPU: от 4 ядер
-- RAM: от 8 GB
+## 🔥 SYSTEM REQUIREMENTS
+
+- CPU: 4+ cores
+- RAM: 8+ GB
 - SSD: 150 GB
-- ОС: Linux
+- OS: Linux
 
-## Метрики производительности
-- Обработка ~30000 цепочек за 250 мс
-- Обработка WebSocket сообщений: 2-8 µs (среднее 4-5 µs)
-- Обработка ордербука: 317 ns - 10.914 µs (среднее 1 µs)
-- Отклик WebSocket: до 300 мс (до 5 мс в регионе Japan)
+## 🔥 PERFORMANCE METRICS
 
-## Возможности бота
+- Processing capacity: ~30,000 chains in 250 ms
+- WebSocket message handling: 2-8 µs (average 4-5 µs)
+- Orderbook processing: 317 ns - 10.914 µs (average 1 µs)
+- WebSocket response time: up to 300 ms (as low as 5 ms in Japan region)
 
-1. **Мониторинг и уведомления**
-   - Ежечасная отправка статуса работы в Telegram (функция отключена в `math_graph.rs`, доступна в логах)
-   - Отправка критических уведомлений в Telegram
-   - Запись сделок, прибыльных цепочек и их "времени жизни" в файлы отладки
-   - Уведомления о выборе цепочек и результатах сделок в Telegram
+## 🔥 BOT CAPABILITIES
 
-2. **Отказоустойчивость**
-   - Автоматический перезапуск при проблемах с интернет-соединением
-   - Критические остановки при аномальных ошибках
-   - Многокомпонентная логика учета цепочек
-   - Пересчет прибыльности на каждом шаге
+### ⚡ MONITORING & ALERTS
+- Hourly operational status via Telegram (disabled in `math_graph.rs`, available in logs)
+- Critical notifications through Telegram
+- Transaction logging, profitable chain tracking, and "lifetime" recording to debug files
+- Chain selection and transaction result notifications via Telegram
 
-3. **Оптимизация торговли**
-   - Получение актуальных данных стаканов без задержек за наносекунды
-   - Двухслойная проверка валидности цепочек
-   - Выбор альтернативных цепочек для:
-     - Максимизации прибыли
-     - Минимизации убытков
-   - Учет всех прибыльных цепочек с выбором наиболее выгодной
+### ⚡ FAULT TOLERANCE
+- Automatic restart on internet connection issues
+- Critical halts on anomalous errors
+- Multi-component chain accounting logic
+- Profitability recalculation at each step
 
-4. **Управление рисками**
-   - Учет рыночного проскальзывания
-   - Анализ "ложных" объемов маркет-мейкера
+### ⚡ TRADE OPTIMIZATION
+- Nanosecond-level orderbook data acquisition without delays
+- Dual-layer chain validation
+- Alternative chain selection for:
+  - Profit maximization
+  - Loss minimization
+- Comprehensive tracking of all profitable chains with optimal selection
 
+### ⚡ RISK MANAGEMENT
+- Market slippage accounting
+- Analysis of "false" market maker volumes
 
-## Рекомендации
-- Рекомендуется использовать регион Japan (Azure Cloud)
-- Необходимо провести тестирование перед релизом
-- Рекомендуется использовать VPN при проблемах с подключением
-- Поддерживаются регионы: Азия, Европа, Америка
+## 🔥 RECOMMENDATIONS
 
-## Отключение Telegram-уведомлений
-Для отключения функции сигналов в Telegram, закомментируйте следующие строки в `main.rs`:
+- Prefer Japan region (Azure Cloud) for optimal performance
+- Conduct thorough testing before release deployment
+- Use VPN for connection issue mitigation
+- Supported regions: Asia, Europe, America
+
+## 🔥 DISABLING TELEGRAM NOTIFICATIONS
+
+To disable Telegram signal functionality, comment out these lines in `main.rs`:
 
 ```rust
 mod telegram;
 use crate::telegram::TelegramBot;
 
-// Инициализация TelegramBot
+// TelegramBot initialization
 let telegram_bot = Arc::new(TelegramBot::new(
-    &std::env::var("TELEGRAM_TOKEN").expect("TELEGRAM_TOKEN не установлена"),
-    std::env::var("CHAT_ID").expect("CHAT_ID не установлена").parse::<i64>().expect("Неверный формат CHAT_ID"),
+    &std::env::var("TELEGRAM_TOKEN").expect("TELEGRAM_TOKEN missing"),
+    std::env::var("CHAT_ID").expect("CHAT_ID missing").parse::<i64>().expect("Invalid CHAT_ID format"),
     Arc::clone(&error_status),
     bot_action_sender.clone(),
 ));
 
-// Запуск TelegramBot
+// TelegramBot execution
 let telegram_bot_clone = Arc::clone(&telegram_bot);
 tokio::spawn(async move {
     telegram_bot_clone.run().await;
 });
 ```
 
-## Контакты
-Telegram: @brahman_brahman
+## 🔥 CONTACT
+Telegram: @code_0110
+
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=FF0000&height=120&section=footer&text=END%20OF%20TRANSMISSION&fontSize=30&fontColor=FFFFFF&animation=fadeIn&fontAlignY=70" width="100%"/>
+</div>
