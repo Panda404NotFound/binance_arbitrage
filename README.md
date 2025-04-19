@@ -185,7 +185,14 @@ tokio::spawn(async move {
 ```
 
 ## 🔥 CONTACT
-Telegram: @code_0110
+
+<div align="center">
+  
+  [![GitHub](https://img.shields.io/badge/GitHub-Panda404NotFound-ff0066?style=for-the-badge&logo=github)](https://github.com/Panda404NotFound)
+  [![Telegram](https://img.shields.io/badge/Telegram-@code__0110-ff0066?style=for-the-badge&logo=telegram)](https://t.me/code_0110)
+  [![Email](https://img.shields.io/badge/Email-synthstudioteam@gmail.com-ff0066?style=for-the-badge&logo=gmail)](mailto:synthstudioteam@gmail.com)
+  
+</div>
 
 <div align="center">
   <img src="https://capsule-render.vercel.app/api?type=waving&color=FF0000&height=120&section=footer&text=END%20OF%20TRANSMISSION&fontSize=30&fontColor=FFFFFF&animation=fadeIn&fontAlignY=70" width="100%"/>
