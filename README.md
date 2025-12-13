@@ -189,8 +189,8 @@ tokio::spawn(async move {
 <div align="center">
   
   [![GitHub](https://img.shields.io/badge/GitHub-Panda404NotFound-ff0066?style=for-the-badge&logo=github)](https://github.com/Panda404NotFound)
-  [![Telegram](https://img.shields.io/badge/Telegram-@code__0110-ff0066?style=for-the-badge&logo=telegram)](https://t.me/code_0110)
-  [![Email](https://img.shields.io/badge/Email-synthstudioteam@gmail.com-ff0066?style=for-the-badge&logo=gmail)](mailto:synthstudioteam@gmail.com)
+  [![Telegram](https://img.shields.io/badge/Telegram-@code__0110-ff0066?style=for-the-badge&logo=telegram)](https://t.me/brahman_mev)
+  [![Email](https://img.shields.io/badge/Email-synthstudioteam@gmail.com-ff0066?style=for-the-badge&logo=gmail)](mailto:brahmanmev@gmail.com)
   
 </div>
 
